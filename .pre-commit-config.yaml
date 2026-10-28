@@ -15,3 +15,10 @@ repos:
         args: [--fix]
       - id: ruff-format
         
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml", "-r", "src"]
+        additional_dependencies: ["bandit[toml]"]
+        pass_filenames: false
