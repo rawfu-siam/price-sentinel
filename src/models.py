@@ -6,8 +6,8 @@ using modern SQLAlchemy 2.0 typed mappings.
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
@@ -38,8 +38,25 @@ class Product(Base):
     )
 
     # Relationship to price history records
+    price_history: Mapped[list["PriceHistory"]] = relationship(
+        "PriceHistory", back_populates="product", cascade="all, delete-orphan"
+    )
 
 
-#    price_history: Mapped[list["PriceHistory"]] = relationship(
-#       "PriceHistory", back_populates="product", cascade="all, delete-orphan"
-#  )
+class PriceHistory(Base):
+    """ORM model representing historical price points and stock status."""
+
+    __tablename__ = "price_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    product_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("products.id"), nullable=False
+    )
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    in_stock: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+    # Relationship back to product
+    product: Mapped["Product"] = relationship("Product", back_populates="price_history")
