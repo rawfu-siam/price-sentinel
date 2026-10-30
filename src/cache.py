@@ -52,3 +52,19 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Error setting key '{key}' in Redis: {e}")
             return False
+
+    def delete(self, key: str) -> bool:
+        """Delete key from cache."""
+        if not self.client:
+            logger.warning("Redis client unavailable. Skipping cache delete.")
+            return False
+        try:
+            self.client.delete(key)
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting key '{key}' from Redis: {e}")
+            return False
+
+
+# Global Redis client instance
+cache = RedisClient()
