@@ -4,7 +4,7 @@ Provides robust client management and caching helper functions for high-velocity
 competitor monitoring state and rate limiting.
 """
 
-# from typing import Any, Optional
+from typing import Optional
 
 import redis
 
@@ -29,3 +29,14 @@ class RedisClient:
         except Exception as e:
             logger.error(f"Failed to connect to Redis: {e}")
             self.client = None
+
+    def get(self, key: str) -> Optional[str]:
+        """Retrieve value from cache by key."""
+        if not self.client:
+            logger.warning("Redis client unavailable. Skipping cache get.")
+            return None
+        try:
+            return self.client.get(key)
+        except Exception as e:
+            logger.error(f"Error retrieving key '{key}' from Redis: {e}")
+            return None
