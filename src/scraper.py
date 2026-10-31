@@ -107,3 +107,8 @@ class PriceScraper:
         except Exception as e:
             logger.error(f"Error parsing HTML content: {e}")
             raise
+
+    async def scrape_product(self, url: str) -> dict:
+        """Orchestrate fetching and parsing pipeline for a given target URL."""
+        html_content = await self.fetch_page_content(url)
+        return self.parse_product_html(html_content, url)
