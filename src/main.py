@@ -7,16 +7,13 @@ and background orchestration triggers for competitor e-commerce monitoring.
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
+from sqlalchemy import text
 
-# from pydantic import BaseModel, HttpUrl
 from src.cache import cache
 from src.config import settings
 from src.database import Base, engine
 from src.logger import logger
-
-# from src.models import PriceHistory, Product
-# from src.scraper import PriceScraper
 
 
 @asynccontextmanager
@@ -48,3 +45,28 @@ app = FastAPI(
     description=("High-Velocity E-Commerce Competitor Monitor & AI Automation Backend"),
     lifespan=lifespan,
 )
+
+
+@app.get("/health", status_code=status.HTTP_200_OK)
+async def health_check() -> dict:
+    """Perform system health check verifying database and cache status."""
+    db_status = "healthy"
+    redis_status = "healthy" if cache.client is not None else "degraded"
+
+    try:
+        # Quick database connectivity check
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as e:
+        logger.error(f"Health check database failure: {e}")
+        db_status = "unhealthy"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database connectivity failure",
+        ) from e
+
+    return {
+        "status": "online" if db_status == "healthy" else "degraded",
+        "database": db_status,
+        "redis": redis_status,
+    }
