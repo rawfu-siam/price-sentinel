@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.database import Base
-from src.models import Product
+from src.models import PriceHistory, Product
 
 
 @pytest.fixture(scope="function")
@@ -51,3 +51,28 @@ def test_create_product(db_session: Session) -> None:
     assert product.current_price == 29.99
     assert product.in_stock is True
     assert isinstance(product.created_at, datetime)
+
+
+def test_price_history_relationship(db_session: Session) -> None:
+    """Verify relationship and foreign key mapping between Product and PriceHistory."""
+    product = Product(
+        sku="TEST-SKU-002",
+        name="History Test Widget",
+        target_url="https://example.com/product/2",
+        current_price=49.99,
+    )
+    db_session.add(product)
+    db_session.commit()
+
+    history_entry = PriceHistory(
+        product_id=product.id,
+        price=49.99,
+        in_stock=True,
+    )
+    db_session.add(history_entry)
+    db_session.commit()
+    db_session.refresh(product)
+
+    assert len(product.price_history) == 1
+    assert product.price_history[0].price == 49.99
+    assert product.price_history[0].product_id == product.id
