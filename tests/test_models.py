@@ -34,12 +34,12 @@ def db_session() -> Generator[Session, None, None]:
 def test_create_product(db_session: Session) -> None:
     """Verify that a product can be successfully created with valid attributes."""
     product = Product(
-        sku="TEST_SKU_001",
+        sku="TEST-SKU-001",
         name="Test Competitor Widget",
         target_url="https://example.com/product/1",
         current_price=29.99,
         currency="USD",
-        is_stock=True,
+        in_stock=True,
     )
     db_session.add(product)
     db_session.commit()
@@ -76,3 +76,31 @@ def test_price_history_relationship(db_session: Session) -> None:
     assert len(product.price_history) == 1
     assert product.price_history[0].price == 49.99
     assert product.price_history[0].product_id == product.id
+
+
+def test_cascade_delete(db_session: Session) -> None:
+    """Verify that deleting a product cascades and removes its price history records."""
+    product = Product(
+        sku="TEST-SKU-003",
+        name="Cascade Test Widget",
+        target_url="https://example.com/product/3",
+        current_price=15.00,
+    )
+    db_session.add(product)
+    db_session.commit()
+
+    history_entry = PriceHistory(
+        product_id=product.id,
+        price=15.00,
+        in_stock=True,
+    )
+    db_session.add(history_entry)
+    db_session.commit()
+
+    # Delete product
+    db_session.delete(product)
+    db_session.commit()
+
+    # Verify history is also deleted
+    history_count = db_session.query(PriceHistory).count()
+    assert history_count == 0
