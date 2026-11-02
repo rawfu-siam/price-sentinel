@@ -155,3 +155,28 @@ async def trigger_scrape(payload: ScrapeRequest, db: Session = Depends(get_db)) 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error during product persistence",
         ) from db_err
+
+
+@app.get("/api/v1/products", status_code=status.HTTP_200_OK)
+async def list_products(db: Session = Depends(get_db)) -> list[dict]:
+    """Retrieve all tracked products and their current pricing status."""
+    try:
+        products = db.query(Product).all()
+        return [
+            {
+                "id": p.id,
+                "sku": p.sku,
+                "name": p.name,
+                "target_url": p.target_url,
+                "current_price": p.current_price,
+                "in_stock": p.in_stock,
+                "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+            }
+            for p in products
+        ]
+    except Exception as e:
+        logger.error(f"Error listing products: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving products from database",
+        ) from e
