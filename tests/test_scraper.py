@@ -42,3 +42,18 @@ def test_parse_product_html_missing_price_raises_error() -> None:
     """
     with pytest.raises(ValueError, match="Price element not found"):
         scraper.parse_product_html(sample_html, "https://example.com/product/2")
+
+
+def test_parse_product_html_unparseable_price_raises_error() -> None:
+    """Verify that a ValueError is raise when the price text contains no digits."""
+    scraper = PriceScraper(headless=True)
+    sample_html = """
+    <html>
+        <body>
+            <h1 class="product-title">Call For Price Widget</h1>
+            <span class="price">Contact Support</span>
+        </body>
+    </html>
+    """
+    with pytest.raises(ValueError, match="Unparseable price"):
+        scraper.parse_product_html(sample_html, "https://example.com/product/3")
