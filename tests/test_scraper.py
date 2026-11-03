@@ -4,6 +4,8 @@ Verifies HTML parsing accuracy, price sanitization, exception handling for missi
 or unparseable price elements, and stock status determination.
 """
 
+import pytest
+
 from src.scraper import PriceScraper
 
 
@@ -25,3 +27,18 @@ def test_parse_product_html_success() -> None:
     assert result["current_price"] == 1499.99
     assert result["in_stock"] is True
     assert result["target_url"] == "https://example.com/product/1"
+
+
+def test_parse_product_html_missing_price_raises_error() -> None:
+    """Verify that a valueError is raised when the price element is missing."""
+    scraper = PriceScraper(headless=True)
+    sample_html = """
+    <html>
+        <body>
+            <h1 class="product-title">Orphaned Widget</h1>
+            <!-- Missing price element -->
+        </body>
+    </html>
+    """
+    with pytest.raises(ValueError, match="Price element not found"):
+        scraper.parse_product_html(sample_html, "https://example.com/product/2")
