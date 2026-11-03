@@ -30,7 +30,7 @@ def test_parse_product_html_success() -> None:
 
 
 def test_parse_product_html_missing_price_raises_error() -> None:
-    """Verify that a valueError is raised when the price element is missing."""
+    """Verify that a ValueError is raised when the price element is missing."""
     scraper = PriceScraper(headless=True)
     sample_html = """
     <html>
@@ -45,7 +45,7 @@ def test_parse_product_html_missing_price_raises_error() -> None:
 
 
 def test_parse_product_html_unparseable_price_raises_error() -> None:
-    """Verify that a ValueError is raise when the price text contains no digits."""
+    """Verify that a ValueError is raised when the price text contains no digits."""
     scraper = PriceScraper(headless=True)
     sample_html = """
     <html>
@@ -57,3 +57,22 @@ def test_parse_product_html_unparseable_price_raises_error() -> None:
     """
     with pytest.raises(ValueError, match="Unparseable price"):
         scraper.parse_product_html(sample_html, "https://example.com/product/3")
+
+
+def test_parse_product_html_out_of_stock() -> None:
+    """Verify correct detection of out-of-stock product status."""
+    scraper = PriceScraper(headless=True)
+    sample_html = """
+    <html>
+        <body>
+            <h1 class="product-title">Sold Out Server</h1>
+            <span class="price">$2,999.00</span>
+            <span class="stock-status">Out of Stock</span>
+        </body>
+    </html>
+    """
+    result = scraper.parse_product_html(sample_html, "https://example.com/product/4")
+
+    assert result["name"] == "Sold Out Server"
+    assert result["current_price"] == 2999.00
+    assert result["in_stock"] is False
